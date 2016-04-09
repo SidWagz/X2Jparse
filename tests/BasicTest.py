@@ -11,3 +11,7 @@ if __name__ == '__main__':
     # print(dedent(parser.xml))
 
     parser.preprocess()
+
+    for line in parser.data:
+        # print(line)
+        print(parser.tokenize(line))
