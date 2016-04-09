@@ -7,4 +7,7 @@ if __name__ == '__main__':
 
     parser = X2J('JustAnotherXmlStyleFile.xml')
 
-    print(parser.xml)
+    # from textwrap import dedent
+    # print(dedent(parser.xml))
+
+    parser.preprocess()
