@@ -54,9 +54,75 @@ class X2J:
         tokens = re.findall(syntax, line)
         # print(tokens)
 
-        map = {'__name__': tokens.pop(0), '__type__': __type__}
+        map = {'__id__': tokens.pop(0), '__type__': __type__}
         for token in tokens:
             lhs, rhs = token.split('=')
             map[lhs] = rhs
 
         return map
+
+    def make_json(self):
+
+        self.prejson = dict()
+        keys = []
+
+        def prejson_addlist(key, value):
+
+            if self.prejson[key]:
+                self.prejson[key] = self.prejson[key] + [value]
+            else:
+                self.prejson[key] = [value]
+
+        def get_innerdict(keys):
+
+            inner_dict = self.prejson
+            for key in keys:
+                if key not in inner_dict:
+                    inner_dict[key] = dict()
+                inner_dict = inner_dict[key]
+
+            return inner_dict
+
+        # def prejson_adddict(inner_dict, k, v):
+        #
+        #     print(self.prejson, keys, k, v)
+        #
+        #     inner_dict[k] = v
+
+            # self.prejson =
+
+        for line in self.data:
+
+            map = self.tokenize(line)
+
+            if map['__type__'] == 'start':
+                keys.append(map['__id__'])
+                del map['__id__']
+                del map['__type__']
+                inner_dict = get_innerdict(keys)
+                for k, v in map.items():
+                    inner_dict[k] = v
+
+            elif map['__type__'] == 'end':
+                keys.pop()
+
+            elif map['__type__'] == 'value':
+                del map['__type__']
+                inner_dict = get_innerdict(keys)
+                inner_dict['value'] = map['__id__']
+
+            else:
+                del map['__type__']
+                inner_dict = get_innerdict(keys)
+                temp_key = map['__id__']
+                del map['__id__']
+                temp_dict = dict()
+                for k, v in map.items():
+                    temp_dict[k] = v
+                if inner_dict.get(temp_key, None) is None:
+                    inner_dict[temp_key] = [temp_dict]
+                else:
+                    inner_dict[temp_key] += [temp_dict]
+
+            # print(keys)
+        print(self.prejson)

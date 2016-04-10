@@ -12,6 +12,8 @@ if __name__ == '__main__':
 
     parser.preprocess()
 
-    for line in parser.data:
-        # print(line)
-        print(parser.tokenize(line))
+    # for line in parser.data:
+    #     # print(line)
+    #     print(parser.tokenize(line))
+
+    parser.make_json()
