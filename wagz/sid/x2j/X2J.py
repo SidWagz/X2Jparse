@@ -4,6 +4,9 @@ __author__ = 'sidwagz'
 import re
 
 class InvalidTagError(Exception):
+    """
+    Invalid tag error raised when xml tags aren't formed as expected
+    """
     pass
 
 class X2J:
@@ -24,10 +27,14 @@ class X2J:
         syntax = r'</?[\w]+.*?>|[-\"\',\.\w\s\d]+'
         self.data = re.findall(syntax, xml_trim)
 
-        # print(self.data)
 
     def tokenize(self, line):
-
+        """
+        Splits the individual xml tags and tag-values into
+        granular tokens for used for key-value mapping
+        :param line:
+        :return:
+        """
         syntax = r'[-,\.\w\d]+\s*=\s*[-,\.\w\d]+|[\"\'][-,\.\w\d\s]+[\"\']\s*=\s*[\"\'][-,\.\w\d\s]+[\"\']|[-,\.\w\d]+\s*=\s*[\"\'][-,\.\w\d\s]+[\"\']|[-,\.\w\d]+'
 
         if line[0] == '<' and line[-1] == '>':
@@ -50,9 +57,7 @@ class X2J:
         else:
             __type__ = 'value'
 
-
         tokens = re.findall(syntax, line)
-        # print(tokens)
 
         map = {'__id__': tokens.pop(0), '__type__': __type__}
         for token in tokens:
@@ -62,6 +67,10 @@ class X2J:
         return map
 
     def make_json(self):
+        """
+        Parse preprocessed and tokenized xml data into a json like dictionary
+        :return:
+        """
 
         self.prejson = dict()
         keys = []
@@ -74,6 +83,11 @@ class X2J:
                 self.prejson[key] = [value]
 
         def get_innerdict(keys):
+            """
+            Generates nested dictionary for inner json elements
+            :param keys:
+            :return:
+            """
 
             inner_dict = self.prejson
             for key in keys:
@@ -82,14 +96,6 @@ class X2J:
                 inner_dict = inner_dict[key]
 
             return inner_dict
-
-        # def prejson_adddict(inner_dict, k, v):
-        #
-        #     print(self.prejson, keys, k, v)
-        #
-        #     inner_dict[k] = v
-
-            # self.prejson =
 
         for line in self.data:
 
@@ -123,6 +129,3 @@ class X2J:
                     inner_dict[temp_key] = [temp_dict]
                 else:
                     inner_dict[temp_key] += [temp_dict]
-
-            # print(keys)
-        print(self.prejson)
