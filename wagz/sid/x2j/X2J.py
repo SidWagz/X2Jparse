@@ -12,6 +12,7 @@ class InvalidTagError(Exception):
 class X2J:
 
     def __init__(self, file_name):
+
         self.xml = None
         with open(file_name, 'r') as f:
             self.xml = f.read()
@@ -22,9 +23,14 @@ class X2J:
         No support for '<' and '>' in file other than that
         :return:
         """
-        xml_trim = re.sub('\n[ ]*<', '<', self.xml)
 
-        syntax = r'</?[-!\w\s\d]+.*?>|[-!\"\',\.\w\s\d]+'
+        inline_re = '\n[ ]*<'
+        xml_trim = re.sub(inline_re, '<', self.xml)
+
+        comment_re = '<!--(<?[-!,?\/\.\w\d\s=\"\']>?)*?-->'
+        xml_trim = re.sub(comment_re, '', xml_trim.strip())
+
+        syntax = r'</?\s*\w[-!\w\s\d]+.*?>|[-!\"\',\.\w\s\d]+'
         self.data = re.findall(syntax, xml_trim.strip())
 
 
@@ -35,9 +41,11 @@ class X2J:
         :param line:
         :return:
         """
-        quoted_kv_pair = '[-\.\w\d_]+\s*=\s*[\"\'][-,\.\w\d\s]+[\"\']'
-        simple_value = '[-,!\.\w\d_]+'
-        syntax = '|'.join((quoted_kv_pair, simple_value))
+
+        quoted_kv_pair_re = '[-\.\w\d_]+\s*=\s*[\"\'][-,\.\w\d\s]+[\"\']'
+        simple_value_re = '[-,!\.\w\d_]+'
+        comment_value_re = '!--[-,!\.\w\d_]+--'
+        syntax = '|'.join((comment_value_re, quoted_kv_pair_re, simple_value_re))
 
         if line[0] == '<' and line[-1] == '>':
             line = line[1:-1]
@@ -49,9 +57,6 @@ class X2J:
             elif line[-1] == '/':
                 line = line[:-1]
                 __type__ = 'single'
-
-            elif line[:3] == '!--':
-                return {'__type__': 'comment'}
 
             else:
                 __type__ = 'start'
@@ -81,13 +86,6 @@ class X2J:
         self.prejson = dict()
         keys = []
 
-        def prejson_addlist(key, value):
-
-            if self.prejson[key]:
-                self.prejson[key] = self.prejson[key] + [value]
-            else:
-                self.prejson[key] = [value]
-
         def get_innerdict(keys):
             """
             Generates nested dictionary for inner json elements
@@ -107,10 +105,7 @@ class X2J:
 
             map = self.tokenize(line)
 
-            if map['__type__'] == 'comment':
-                pass
-
-            elif map['__type__'] == 'start':
+            if map['__type__'] == 'start':
                 keys.append(map['__id__'])
                 del map['__id__']
                 del map['__type__']
@@ -124,7 +119,10 @@ class X2J:
             elif map['__type__'] == 'value':
                 del map['__type__']
                 inner_dict = get_innerdict(keys)
-                inner_dict['value'] = map['__id__']
+                if inner_dict.get('value', None) is None:
+                    inner_dict['value'] = map['__id__']
+                else:
+                    inner_dict['value'] = [inner_dict['value'], map['__id__']]
 
             else:
                 del map['__type__']
