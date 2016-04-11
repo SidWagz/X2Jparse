@@ -24,8 +24,8 @@ class X2J:
         """
         xml_trim = re.sub('\n[ ]*<', '<', self.xml)
 
-        syntax = r'</?[\w]+.*?>|[-\"\',\.\w\s\d]+'
-        self.data = re.findall(syntax, xml_trim)
+        syntax = r'</?[-!\w\s\d]+.*?>|[-!\"\',\.\w\s\d]+'
+        self.data = re.findall(syntax, xml_trim.strip())
 
 
     def tokenize(self, line):
@@ -35,7 +35,9 @@ class X2J:
         :param line:
         :return:
         """
-        syntax = r'[-,\.\w\d]+\s*=\s*[-,\.\w\d]+|[\"\'][-,\.\w\d\s]+[\"\']\s*=\s*[\"\'][-,\.\w\d\s]+[\"\']|[-,\.\w\d]+\s*=\s*[\"\'][-,\.\w\d\s]+[\"\']|[-,\.\w\d]+'
+        quoted_kv_pair = '[-\.\w\d_]+\s*=\s*[\"\'][-,\.\w\d\s]+[\"\']'
+        simple_value = '[-,!\.\w\d_]+'
+        syntax = '|'.join((quoted_kv_pair, simple_value))
 
         if line[0] == '<' and line[-1] == '>':
             line = line[1:-1]
@@ -47,6 +49,9 @@ class X2J:
             elif line[-1] == '/':
                 line = line[:-1]
                 __type__ = 'single'
+
+            elif line[:3] == '!--':
+                return {'__type__': 'comment'}
 
             else:
                 __type__ = 'start'
@@ -61,8 +66,9 @@ class X2J:
 
         map = {'__id__': tokens.pop(0), '__type__': __type__}
         for token in tokens:
-            lhs, rhs = token.split('=')
-            map[lhs] = rhs
+            if '=' in token:
+                lhs, rhs = token.split('=')
+                map[lhs] = rhs
 
         return map
 
@@ -101,7 +107,10 @@ class X2J:
 
             map = self.tokenize(line)
 
-            if map['__type__'] == 'start':
+            if map['__type__'] == 'comment':
+                pass
+
+            elif map['__type__'] == 'start':
                 keys.append(map['__id__'])
                 del map['__id__']
                 del map['__type__']
