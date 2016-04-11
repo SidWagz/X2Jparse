@@ -126,6 +126,9 @@ class X2J:
                 for k, v in map.items():
                     temp_dict[k] = v
                 if inner_dict.get(temp_key, None) is None:
-                    inner_dict[temp_key] = [temp_dict]
+                    inner_dict[temp_key] = temp_dict
                 else:
-                    inner_dict[temp_key] += [temp_dict]
+                    if isinstance(inner_dict[temp_key], list):
+                        inner_dict[temp_key] += [temp_dict]
+                    else:
+                        inner_dict[temp_key] = [inner_dict[temp_key], temp_dict]
