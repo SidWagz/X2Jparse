@@ -9,7 +9,7 @@ class InvalidTagError(Exception):
     """
     pass
 
-class X2J:
+class X2Jparser:
 
     def __init__(self, file_name):
 
